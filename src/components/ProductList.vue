@@ -96,56 +96,44 @@ const headers = [
 
 const products = ref([])
 const showForm = ref(false)
-const editingProduct = ref({})
+const editingProduct = ref(getEmptyProduct())
 const editingIndex = ref(null)
 
 onMounted(() => {
   const stored = localStorage.getItem('products')
-  if (stored) {
-    const loadedProducts = JSON.parse(stored)
-    const uniqueProductsMap = new Map()
-    loadedProducts.forEach(product => {
-      if (!uniqueProductsMap.has(product.id)) {
-        uniqueProductsMap.set(product.id, product)
-      }
-    })
-    products.value = Array.from(uniqueProductsMap.values())
-  } else {
-    products.value = []
-  }
+  products.value = stored ? JSON.parse(stored) : []
 })
 
 
 const formatDate = (dateStr) => {
-  const date = new Date(dateStr + 'T00:00:00')
-  return date.toLocaleDateString()
+ return new Date(dateStr).toDateString()
 }
 
 const getExpiryStatus = (expiryDate) => {
   const today = new Date()
-  const expiry = new Date(expiryDate + 'T00:00:00')
-  const diffDay = Math.floor((expiry - today) / (1000 * 60 * 60 * 24))
+  today.setDate(0,0,0,0)
+  const expiry = new Date(expiryDate)
+  expiry.setHours(0,0,0,0)
 
+  const diffDay = Math.floor((expiry - today) / (1000 * 60 * 60 * 24))
   if (diffDay < 0) return 'expired'
   if (diffDay <= 7) return 'warning'
   return 'good'
 }
 
-function openCreateForm() {
-  editingProduct.value = {
-    id: null,
+function getEmptyProduct(){
+  return{
+    id:null,
     name: '',
     quantity: 0,
     price: 0,
-    expiryDate: ''
+    expiryDate:''
   }
-  editingIndex.value = null
-  showForm.value = true
 }
 
-function editProduct(index) {
-  editingProduct.value = { ...products.value[index] }
-  editingIndex.value = index
+function openCreateForm(){
+  editingProduct.value = getEmptyProduct()
+  editingIndex.value = null
   showForm.value = true
 }
 
@@ -156,6 +144,8 @@ function handleSave(product) {
     products.value.push(product)
   }
   localStorage.setItem('products', JSON.stringify(products.value))
+  editingProduct.value = getEmptyProduct()
+  editingIndex.value = null
   showForm.value = false
 }
 
